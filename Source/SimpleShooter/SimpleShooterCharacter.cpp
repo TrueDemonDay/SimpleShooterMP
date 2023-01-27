@@ -70,10 +70,13 @@ ASimpleShooterCharacter::ASimpleShooterCharacter()
 
 }
 
+
+//In the implementation of the actor class, you need to implement the GetLifetimeReplicatedProps function: 
 void ASimpleShooterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(ASimpleShooterCharacter,Aiming);
+	DOREPLIFETIME(ASimpleShooterCharacter, Aiming);
+	DOREPLIFETIME(ASimpleShooterCharacter, ControllerRotation);
 }
 
 void ASimpleShooterCharacter::BeginPlay()
@@ -87,6 +90,8 @@ void ASimpleShooterCharacter::BeginPlay()
 	Mesh1P->SetHiddenInGame(false, true);
 
 	EndAim();
+
+	GetWorldTimerManager().SetTimer(RotationUpdateTimer, this, &ASimpleShooterCharacter::UpdateRotator, 0.022f, true);
 
 }
 
@@ -398,6 +403,8 @@ void ASimpleShooterCharacter::PlayerDead_Implementation()
 	//StartTimer for respawn
 	FTimerHandle TimerHandele;
 	GetWorldTimerManager().SetTimer(TimerHandele, this, &ASimpleShooterCharacter::Respawn, 5, false);
+
+	GetWorldTimerManager().PauseTimer(RotationUpdateTimer);
 }
 
 void ASimpleShooterCharacter::Respawn_Implementation()
@@ -407,6 +414,9 @@ void ASimpleShooterCharacter::Respawn_Implementation()
 	NewBody->SetActorLocation(FVector(0,0,900));
 	if (NewBody && GetController()!=nullptr)
 		GetController()->Possess(Cast<ASimpleShooterCharacter>(NewBody));
+
+	FTimerHandle TimerHandele;
+	GetWorldTimerManager().SetTimer(TimerHandele, this, &ASimpleShooterCharacter::DestroySelf, 15, false);
 }
 
 void ASimpleShooterCharacter::TurnAtRate(float Rate)
@@ -434,4 +444,15 @@ bool ASimpleShooterCharacter::EnableTouchscreenMovement(class UInputComponent* P
 	}
 	
 	return false;
+}
+
+void ASimpleShooterCharacter::UpdateRotator_Implementation()
+{
+	//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Update rotation!"));
+	ControllerRotation = GetControlRotation();
+}
+
+void ASimpleShooterCharacter::DestroySelf_Implementation()
+{
+	Destroy();
 }

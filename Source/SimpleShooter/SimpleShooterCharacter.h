@@ -114,9 +114,6 @@ protected:
 	void StartAim();
 	void EndAim();
 
-	UPROPERTY(Replicated, BlueprintReadOnly)
-	bool Aiming = false;
-
 	UFUNCTION(Server, Reliable)
 	void SetMaxWalkSpeed(float NewSpeed);
 
@@ -135,6 +132,9 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void Respawn();
 
+	UFUNCTION(Server, Reliable)
+	void UpdateRotator();
+
 	UFUNCTION(NetMulticast, Reliable)
 	void PlayerDead();
 
@@ -143,6 +143,9 @@ protected:
 
 	UFUNCTION()
 	void TakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+
+	UFUNCTION(Server, Reliable)
+	void DestroySelf();
 
 
 	//Overrite all include damage (use it if need rewrite damage system)
@@ -189,11 +192,21 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = Movement)
 	float MaxAimSpeed = 200.f;
 
+	//DamageVar (set default)
 	UPROPERTY(EditDefaultsOnly, Category = Shooting)
 	float fDamage = 20.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Health)
 	float Health = 100.f;
+
+	//Varribles for Rotation Animation
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	FRotator ControllerRotation;
+	FTimerHandle RotationUpdateTimer;
+
+	//Var for Aim animation
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	bool Aiming = false;
 
 	bool bIsDead = false;
 };
