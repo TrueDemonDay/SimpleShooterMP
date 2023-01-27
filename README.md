@@ -1,2 +1,5 @@
 # SimpleShooterMP
- Create simple online shooter
+
+
+Workin on Online replication in UE4
+Use UE ThirPersonPack, FirstPersonPack, StarterPack, AnimStarterPack
