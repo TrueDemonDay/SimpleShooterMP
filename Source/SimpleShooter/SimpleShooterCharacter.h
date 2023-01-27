@@ -132,6 +132,23 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void ShootLineTrace();
 
+	UFUNCTION(Server, Reliable)
+	void Respawn();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void PlayerDead();
+
+	UFUNCTION()
+	void TakePointDamage(AActor* DamagedActor, float Damage, class AController* InstigatedBy, FVector HitLocation, class UPrimitiveComponent* FHitComponent, FName BoneName, FVector ShotFromDirection, const class UDamageType* DamageType, AActor* DamageCauser);
+
+	UFUNCTION()
+	void TakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+
+
+	//Overrite all include damage (use it if need rewrite damage system)
+	/*UFUNCTION()
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const & DamageEvent, class AController * EventInstigator, AActor * DamageCauser) override;*/
+
 	struct TouchData
 	{
 		TouchData() { bIsPressed = false;Location=FVector::ZeroVector;}
@@ -173,6 +190,11 @@ public:
 	float MaxAimSpeed = 200.f;
 
 	UPROPERTY(EditDefaultsOnly, Category = Shooting)
-	float Damage = 20.f;
+	float fDamage = 20.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = Health)
+	float Health = 100.f;
+
+	bool bIsDead = false;
 };
 

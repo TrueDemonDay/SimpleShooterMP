@@ -23,6 +23,10 @@ DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
 ASimpleShooterCharacter::ASimpleShooterCharacter()
 {
+	//Add Dynamic events
+	OnTakePointDamage.AddDynamic(this, &ASimpleShooterCharacter::TakePointDamage);
+	OnTakeAnyDamage.AddDynamic(this, &ASimpleShooterCharacter::TakeAnyDamage);
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
 
@@ -62,6 +66,8 @@ ASimpleShooterCharacter::ASimpleShooterCharacter()
 	GunShootDistance = FVector(10000.0f, 0.0f, 0.0f);
 
 	SetReplicates(true);
+
+
 }
 
 void ASimpleShooterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -153,6 +159,7 @@ void ASimpleShooterCharacter::OnFire()
 			}
 		}
 	}*/
+	if (bIsDead) return;
 
 	ShootLineTrace();
 	// try and play the sound if specified
@@ -192,6 +199,23 @@ void ASimpleShooterCharacter::OnFire()
 {
 	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
 }*/
+
+void ASimpleShooterCharacter::TakePointDamage(AActor * DamagedActor, float Damage, AController * InstigatedBy, FVector HitLocation, UPrimitiveComponent * FHitComponent, FName BoneName, FVector ShotFromDirection, const UDamageType * DamageType, AActor * DamageCauser)
+{
+	//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("PointDamage!"));
+	if (BoneName == "head")
+		TakeAnyDamage(this, 100.f, DamageType, InstigatedBy, DamageCauser);
+}
+
+void ASimpleShooterCharacter::TakeAnyDamage(AActor * DamagedActor, float Damage, const UDamageType * DamageType, AController * InstigatedBy, AActor * DamageCauser)
+{
+	Health -= Damage;
+	if (Health <= 0)
+	{
+		if (!bIsDead)
+			PlayerDead();
+	}
+}
 
 void ASimpleShooterCharacter::BeginTouch(const ETouchIndex::Type FingerIndex, const FVector Location)
 {
@@ -347,7 +371,7 @@ void ASimpleShooterCharacter::ShootLineTrace_Implementation()
 	{
 		if (OutHit.GetActor())
 		{
-			UGameplayStatics::ApplyPointDamage(OutHit.GetActor(), Damage, LineTraceSpawnLocation, OutHit, nullptr, this, nullptr);
+			UGameplayStatics::ApplyPointDamage(OutHit.GetActor(), fDamage, LineTraceSpawnLocation, OutHit, nullptr, this, nullptr);
 		}
 	}
 	/*DrawDebugLine(
@@ -358,6 +382,31 @@ void ASimpleShooterCharacter::ShootLineTrace_Implementation()
 		false, 1, 0,
 		1
 	);*/
+}
+
+void ASimpleShooterCharacter::PlayerDead_Implementation()
+{
+	//On ragdoll and show for player
+	GetMesh()->SetSimulatePhysics(true);
+	GetMesh()->SetOwnerNoSee(false);
+	//Hide hands and weapon for player
+	Mesh1P->SetHiddenInGame(true, true);
+	//Off collision for pawns
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+	bIsDead = true;
+
+	//StartTimer for respawn
+	FTimerHandle TimerHandele;
+	GetWorldTimerManager().SetTimer(TimerHandele, this, &ASimpleShooterCharacter::Respawn, 5, false);
+}
+
+void ASimpleShooterCharacter::Respawn_Implementation()
+{	
+	AActor *NewBody;
+	NewBody = GetWorld()->SpawnActor(ASimpleShooterCharacter::GetClass());
+	NewBody->SetActorLocation(FVector(0,0,900));
+	if (NewBody && GetController()!=nullptr)
+		GetController()->Possess(Cast<ASimpleShooterCharacter>(NewBody));
 }
 
 void ASimpleShooterCharacter::TurnAtRate(float Rate)
