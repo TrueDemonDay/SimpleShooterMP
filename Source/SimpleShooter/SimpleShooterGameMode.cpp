@@ -4,6 +4,8 @@
 #include "SimpleShooterHUD.h"
 #include "SimpleShooterCharacter.h"
 #include "UObject/ConstructorHelpers.h"
+#include "SimpleShooterPS.h"
+#include "SimpleShooterPlayerController.h"
 
 ASimpleShooterGameMode::ASimpleShooterGameMode()
 	: Super()
@@ -14,4 +16,6 @@ ASimpleShooterGameMode::ASimpleShooterGameMode()
 
 	// use our custom HUD class
 	HUDClass = ASimpleShooterHUD::StaticClass();
+	PlayerStateClass = ASimpleShooterPS::StaticClass();
+	PlayerControllerClass = ASimpleShooterPlayerController::StaticClass();
 }

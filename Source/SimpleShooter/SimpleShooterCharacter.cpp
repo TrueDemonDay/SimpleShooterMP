@@ -15,6 +15,8 @@
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
+#include "SimpleShooterPS.h"
+#include "SimpleShooterPlayerController.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -77,6 +79,7 @@ void ASimpleShooterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ASimpleShooterCharacter, Aiming);
 	DOREPLIFETIME(ASimpleShooterCharacter, ControllerRotation);
+	DOREPLIFETIME(ASimpleShooterCharacter, Health);
 }
 
 void ASimpleShooterCharacter::BeginPlay()
@@ -92,6 +95,8 @@ void ASimpleShooterCharacter::BeginPlay()
 	EndAim();
 
 	GetWorldTimerManager().SetTimer(RotationUpdateTimer, this, &ASimpleShooterCharacter::UpdateRotator, 0.022f, true);
+
+	SimpleShooterPlayerControllerRef = Cast<ASimpleShooterPlayerController>(GetController());
 
 }
 
@@ -208,17 +213,58 @@ void ASimpleShooterCharacter::OnFire()
 void ASimpleShooterCharacter::TakePointDamage(AActor * DamagedActor, float Damage, AController * InstigatedBy, FVector HitLocation, UPrimitiveComponent * FHitComponent, FName BoneName, FVector ShotFromDirection, const UDamageType * DamageType, AActor * DamageCauser)
 {
 	//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("PointDamage!"));
-	if (BoneName == "head")
-		TakeAnyDamage(this, 100.f, DamageType, InstigatedBy, DamageCauser);
+	if (BoneName == "head" && !bIsDead)
+	{
+		bTakeHeadShot = true;
+		TakeAnyDamage(this, Damage*2, DamageType, InstigatedBy, DamageCauser); //Make triple damage to head shot (First take Any damage, and now deal plus double)
+	}
 }
 
 void ASimpleShooterCharacter::TakeAnyDamage(AActor * DamagedActor, float Damage, const UDamageType * DamageType, AController * InstigatedBy, AActor * DamageCauser)
 {
+	if (bIsDead) return;
 	Health -= Damage;
+	UpdateHPMulticast(Health);
 	if (Health <= 0)
 	{
 		if (!bIsDead)
+		{
 			PlayerDead();
+			if (DamageCauser) //Try points to causer is valid
+			{
+				ASimpleShooterCharacter* Causer = Cast<ASimpleShooterCharacter>(DamageCauser);
+				if (Causer) //Try take causer character
+				{
+					ASimpleShooterPS* ShooterPlayerState = Cast<ASimpleShooterPS>(Causer->GetPlayerState());
+					if (ShooterPlayerState) //Try take state
+					{
+						if(bTakeHeadShot)
+							ShooterPlayerState->PlayerHeadShots += 1; //Add HeadShot point
+						ShooterPlayerState->PlayerScore += 1; //Add Kills
+					}
+				}
+			}
+
+			ASimpleShooterPS* SelfPlayerState = Cast<ASimpleShooterPS>(GetPlayerState());
+			if (SelfPlayerState)
+				SelfPlayerState->PlayerDeaths += 1;
+		}
+	}
+	bTakeHeadShot = false;
+	UpdateHPWidget();
+}
+
+void ASimpleShooterCharacter::UpdateHPMulticast_Implementation(float NewHealth)
+{
+	Health = NewHealth;
+}
+
+void ASimpleShooterCharacter::UpdateHPWidget_Implementation()
+{
+	if (SimpleShooterPlayerControllerRef)
+	{
+		SimpleShooterPlayerControllerRef->SetHidenHPWidget(!bIsDead);
+		SimpleShooterPlayerControllerRef->SetGPWidget(Health);
 	}
 }
 
@@ -372,7 +418,9 @@ void ASimpleShooterCharacter::ShootLineTrace_Implementation()
 	const FVector LineTraceSpawnLocation = ((FirstPersonCameraComponent) ? FirstPersonCameraComponent->GetComponentLocation() : GetActorLocation()) + LineTraceRotation.RotateVector(FVector(75.f, 0.f,0.f));
 	const FVector EndTraceSpawnLocation = ((FirstPersonCameraComponent) ? FirstPersonCameraComponent->GetComponentLocation() : GetActorLocation()) + LineTraceRotation.RotateVector(FVector(100000.f, 0.f, 0.f));
 	FHitResult OutHit;
-	if (GetWorld()->LineTraceSingleByChannel(OutHit, LineTraceSpawnLocation, EndTraceSpawnLocation, ECollisionChannel::ECC_Visibility))
+	FCollisionQueryParams Params = FCollisionQueryParams::DefaultQueryParam;
+	Params.AddIgnoredActor(this);
+	if (GetWorld()->LineTraceSingleByChannel(OutHit, LineTraceSpawnLocation, EndTraceSpawnLocation, ECollisionChannel::ECC_Visibility, Params))
 	{
 		if (OutHit.GetActor())
 		{
@@ -412,8 +460,13 @@ void ASimpleShooterCharacter::Respawn_Implementation()
 	AActor *NewBody;
 	NewBody = GetWorld()->SpawnActor(ASimpleShooterCharacter::GetClass());
 	NewBody->SetActorLocation(FVector(0,0,900));
-	if (NewBody && GetController()!=nullptr)
-		GetController()->Possess(Cast<ASimpleShooterCharacter>(NewBody));
+	if (NewBody && GetController() != nullptr)
+	{
+		ASimpleShooterCharacter* NewCharacter = Cast<ASimpleShooterCharacter>(NewBody);
+		GetController()->Possess(NewCharacter);
+		NewCharacter->SimpleShooterPlayerControllerRef = SimpleShooterPlayerControllerRef;
+		NewCharacter->UpdateHPWidget();
+	}
 
 	FTimerHandle TimerHandele;
 	GetWorldTimerManager().SetTimer(TimerHandele, this, &ASimpleShooterCharacter::DestroySelf, 15, false);

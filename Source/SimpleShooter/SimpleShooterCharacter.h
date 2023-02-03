@@ -13,6 +13,7 @@ class UCameraComponent;
 class UMotionControllerComponent;
 class UAnimMontage;
 class USoundBase;
+class ASimpleShooterPlayerController;
 
 UCLASS(config=Game)
 class ASimpleShooterCharacter : public ACharacter
@@ -147,6 +148,12 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void DestroySelf();
 
+	UFUNCTION(NetMulticast, Reliable)
+	void UpdateHPWidget();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void UpdateHPMulticast(float NewHealth);
+
 
 	//Overrite all include damage (use it if need rewrite damage system)
 	/*UFUNCTION()
@@ -184,6 +191,9 @@ public:
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
+	UPROPERTY()
+	ASimpleShooterPlayerController* SimpleShooterPlayerControllerRef;
+
 	//SetSpeedProperty
 	UPROPERTY(EditDefaultsOnly, Category = Movement)
 	float MaxWalkSpeed = 400.f;
@@ -196,7 +206,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = Shooting)
 	float fDamage = 20.f;
 
-	UPROPERTY(EditDefaultsOnly, Category = Health)
+	UPROPERTY(EditDefaultsOnly, Category = Health, Replicated)
 	float Health = 100.f;
 
 	//Varribles for Rotation Animation
@@ -209,5 +219,6 @@ public:
 	bool Aiming = false;
 
 	bool bIsDead = false;
+	bool bTakeHeadShot = false;
 };
 
