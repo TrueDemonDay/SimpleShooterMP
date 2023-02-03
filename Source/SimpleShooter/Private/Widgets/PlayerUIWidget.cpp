@@ -15,7 +15,8 @@ void UPlayerUIWidget::SetHPBlock(float NewHP)
 void UPlayerUIWidget::SetNewHidenHPBlock(bool NewHiden)
 {
 	if (HPBlock) //CheckIsValid
-	{//(FirstPersonCameraComponent) ? FirstPersonCameraComponent->GetComponentLocation() : GetActorLocation()
+	{
+		//First simple select for var
 		/*ESlateVisibility NewVivibility = ESlateVisibility::Visible; //SetNewHidenVar
 		if (!NewHiden)
 			NewVivibility = ESlateVisibility::Hidden;*/

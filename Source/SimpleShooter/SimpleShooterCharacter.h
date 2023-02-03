@@ -14,6 +14,7 @@ class UMotionControllerComponent;
 class UAnimMontage;
 class USoundBase;
 class ASimpleShooterPlayerController;
+class ASimpleShooterGameMode;
 
 UCLASS(config=Game)
 class ASimpleShooterCharacter : public ACharacter
@@ -193,6 +194,9 @@ public:
 
 	UPROPERTY()
 	ASimpleShooterPlayerController* SimpleShooterPlayerControllerRef;
+
+	UPROPERTY()
+	ASimpleShooterGameMode* SimpleShooterGameModeRef;
 
 	//SetSpeedProperty
 	UPROPERTY(EditDefaultsOnly, Category = Movement)

@@ -17,6 +17,8 @@
 #include "DrawDebugHelpers.h"
 #include "SimpleShooterPS.h"
 #include "SimpleShooterPlayerController.h"
+#include "SimpleShooterGameMode.h"
+#include "GameFramework/GameModeBase.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogFPChar, Warning, All);
 
@@ -97,7 +99,7 @@ void ASimpleShooterCharacter::BeginPlay()
 	GetWorldTimerManager().SetTimer(RotationUpdateTimer, this, &ASimpleShooterCharacter::UpdateRotator, 0.022f, true);
 
 	SimpleShooterPlayerControllerRef = Cast<ASimpleShooterPlayerController>(GetController());
-
+	SimpleShooterGameModeRef = (ASimpleShooterGameMode*)GetWorld()->GetAuthGameMode();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -223,8 +225,9 @@ void ASimpleShooterCharacter::TakePointDamage(AActor * DamagedActor, float Damag
 void ASimpleShooterCharacter::TakeAnyDamage(AActor * DamagedActor, float Damage, const UDamageType * DamageType, AController * InstigatedBy, AActor * DamageCauser)
 {
 	if (bIsDead) return;
-	Health -= Damage;
-	UpdateHPMulticast(Health);
+
+	Health -= Damage; //Set health on server (By replication)
+	UpdateHPMulticast(Health); //Update health on clients
 	if (Health <= 0)
 	{
 		if (!bIsDead)
@@ -417,7 +420,7 @@ void ASimpleShooterCharacter::ShootLineTrace_Implementation()
 	// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
 	const FVector LineTraceSpawnLocation = ((FirstPersonCameraComponent) ? FirstPersonCameraComponent->GetComponentLocation() : GetActorLocation()) + LineTraceRotation.RotateVector(FVector(75.f, 0.f,0.f));
 	const FVector EndTraceSpawnLocation = ((FirstPersonCameraComponent) ? FirstPersonCameraComponent->GetComponentLocation() : GetActorLocation()) + LineTraceRotation.RotateVector(FVector(100000.f, 0.f, 0.f));
-	FHitResult OutHit;
+	FHitResult OutHit; 
 	FCollisionQueryParams Params = FCollisionQueryParams::DefaultQueryParam;
 	Params.AddIgnoredActor(this);
 	if (GetWorld()->LineTraceSingleByChannel(OutHit, LineTraceSpawnLocation, EndTraceSpawnLocation, ECollisionChannel::ECC_Visibility, Params))
@@ -427,6 +430,7 @@ void ASimpleShooterCharacter::ShootLineTrace_Implementation()
 			UGameplayStatics::ApplyPointDamage(OutHit.GetActor(), fDamage, LineTraceSpawnLocation, OutHit, nullptr, this, nullptr);
 		}
 	}
+	//Draw line for Debug
 	/*DrawDebugLine(
 		GetWorld(),
 		LineTraceSpawnLocation,
@@ -459,7 +463,9 @@ void ASimpleShooterCharacter::Respawn_Implementation()
 {	
 	AActor *NewBody;
 	NewBody = GetWorld()->SpawnActor(ASimpleShooterCharacter::GetClass());
-	NewBody->SetActorLocation(FVector(0,0,900));
+	FTransform NewTransform = SimpleShooterGameModeRef->GetNewRespawLocation();
+	NewBody->SetActorTransform(NewTransform);
+
 	if (NewBody && GetController() != nullptr)
 	{
 		ASimpleShooterCharacter* NewCharacter = Cast<ASimpleShooterCharacter>(NewBody);

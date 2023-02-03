@@ -13,6 +13,13 @@ class ASimpleShooterGameMode : public AGameModeBase
 
 public:
 	ASimpleShooterGameMode();
+
+	UPROPERTY()
+	TArray<AActor*> RespawnPoints;
+
+	FTransform GetNewRespawLocation();
+
+	void AddNewRespawnPoint(AActor* NewPoint);
 };
 
 
