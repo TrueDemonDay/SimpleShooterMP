@@ -5,6 +5,8 @@
 #include "Components/TextBlock.h"
 #include "Components/Widget.h"
 #include "Components/HorizontalBox.h"
+#include "Components/VerticalBox.h"
+#include "Widgets/PlayerScoreUIWidget.h"
 
 void UPlayerUIWidget::SetHPBlock(float NewHP)
 {
@@ -16,6 +18,7 @@ void UPlayerUIWidget::SetNewHidenHPBlock(bool NewHiden)
 {
 	if (HPBlock) //CheckIsValid
 	{
+		//Old
 		//First simple select for var
 		/*ESlateVisibility NewVivibility = ESlateVisibility::Visible; //SetNewHidenVar
 		if (!NewHiden)
@@ -24,5 +27,29 @@ void UPlayerUIWidget::SetNewHidenHPBlock(bool NewHiden)
 		UHorizontalBox* ParentBox = Cast<UHorizontalBox>(HPBlock->GetParent()); //I use parent Horisantal box in BP, so here is magic check!!!
 		if (ParentBox)//Check is valid
 			ParentBox->SetVisibility((!NewHiden) ? ESlateVisibility::Hidden : ESlateVisibility::Visible); //SetNewVisibility
+	}
+}
+
+void UPlayerUIWidget::ShowScoreBlock(bool NewHiden)
+{
+	if (VBoxScore)
+		VBoxScore->SetVisibility((NewHiden) ? ESlateVisibility::Hidden : ESlateVisibility::Visible);
+}
+
+void UPlayerUIWidget::AddNewScoreWidget(UPlayerScoreUIWidget* NewScoreWidget)
+{
+	if (NewScoreWidget)
+	{
+		ScoreWidgetsArray.Add(NewScoreWidget);
+		VBoxScore->AddChild(NewScoreWidget);
+	}
+}
+
+void UPlayerUIWidget::RemoveScoreWidget(UPlayerScoreUIWidget* ScoreWidgetToRemove)
+{
+	if (ScoreWidgetToRemove && ScoreWidgetsArray.Find(ScoreWidgetToRemove))
+	{
+		ScoreWidgetToRemove->RemoveFromParent();
+		ScoreWidgetsArray.Remove(ScoreWidgetToRemove);
 	}
 }

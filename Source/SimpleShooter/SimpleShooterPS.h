@@ -6,6 +6,8 @@
 #include "GameFramework/PlayerState.h"
 #include "SimpleShooterPS.generated.h"
 
+
+class ASimpleShooterGameMode;
 /**
  * 
  */
@@ -15,12 +17,13 @@ class SIMPLESHOOTER_API ASimpleShooterPS : public APlayerState
 	GENERATED_BODY()
 
 public:
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	int PlayerScore = 0;
 
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	int PlayerDeaths = 0;
 
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	int PlayerHeadShots = 0;
+
 };

@@ -116,6 +116,10 @@ protected:
 	void StartAim();
 	void EndAim();
 
+	//Show and hide functions
+	void ShowScore();
+	void HideScore();
+
 	UFUNCTION(Server, Reliable)
 	void SetMaxWalkSpeed(float NewSpeed);
 
@@ -148,9 +152,6 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void DestroySelf();
-
-	UFUNCTION(NetMulticast, Reliable)
-	void UpdateHPWidget();
 
 	UFUNCTION(NetMulticast, Reliable)
 	void UpdateHPMulticast(float NewHealth);
@@ -224,5 +225,8 @@ public:
 
 	bool bIsDead = false;
 	bool bTakeHeadShot = false;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void UpdateHPWidget();
 };
 

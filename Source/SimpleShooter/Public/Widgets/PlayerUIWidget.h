@@ -6,6 +6,8 @@
 #include "Blueprint/UserWidget.h"
 #include "PlayerUIWidget.generated.h"
 
+
+class UPlayerScoreUIWidget;
 /**
  * 
  */
@@ -18,9 +20,18 @@ class SIMPLESHOOTER_API UPlayerUIWidget : public UUserWidget
 public:
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	class UTextBlock* HPBlock;
+	class UTextBlock* HPBlock = nullptr;
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	class UVerticalBox* VBoxScore = nullptr;
+
+	UPROPERTY()
+	TArray<UPlayerScoreUIWidget*> ScoreWidgetsArray;
 
 	void SetHPBlock(float NewHP);
 	void SetNewHidenHPBlock(bool NewHiden);
 
+	void ShowScoreBlock(bool NewHiden);
+
+	void AddNewScoreWidget(UPlayerScoreUIWidget* NewScoreWidget);
+	void RemoveScoreWidget(UPlayerScoreUIWidget* ScoreWidgetToRemove);
 };

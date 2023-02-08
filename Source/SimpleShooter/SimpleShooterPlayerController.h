@@ -10,7 +10,10 @@
  * 
  */
 
+class ASimpleShooterPS;
+class ASimpleShooterGameMode;
 class UPlayerUIWidget;
+class UPlayerScoreUIWidget;
 
 UCLASS()
 class SIMPLESHOOTER_API ASimpleShooterPlayerController : public APlayerController
@@ -19,13 +22,35 @@ class SIMPLESHOOTER_API ASimpleShooterPlayerController : public APlayerControlle
 	
 protected:
 	virtual void BeginPlay();
+	virtual void BeginPlayingState();
 
 public:
+
+	UPROPERTY(EditDefaultsOnly, Category = Widgets)
+	TSubclassOf<UPlayerScoreUIWidget> PlayerScoreClass;
 
 	UPROPERTY(BlueprintReadWrite)
 	UPlayerUIWidget* PlayerWidgetRef;
 
-	void SetGPWidget(float NewHP);
-	void SetHidenHPWidget(bool NewHiden);
+	UPROPERTY(BlueprintReadWrite)
+	UPlayerScoreUIWidget* PlayerScore;
 
+	UPROPERTY(BlueprintReadWrite)
+	ASimpleShooterPS* PlayerStateRef;
+
+	UPROPERTY(BlueprintReadWrite)
+	ASimpleShooterGameMode* GameModeRef;
+
+	void SetHPWidget(float NewHP);
+	void SetHidenHPWidget(bool NewHiden);
+	void SetHidenScoreWidget(bool NewHiden);
+
+	void AddState();
+
+	bool bStateIsAdd = false;
+
+	FTimerHandle ScoreUpdateTimer;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void UpdateScore();
 };

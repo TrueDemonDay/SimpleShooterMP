@@ -12,7 +12,7 @@
 #include "MotionControllerComponent.h"
 #include "XRMotionControllerBase.h" // for FXRMotionControllerBase::RightHandSourceId
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Net/UnrealNetwork.h"
+#include "Net/UnrealNetwork.h" //Need for replication
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
 #include "SimpleShooterPS.h"
@@ -70,8 +70,6 @@ ASimpleShooterCharacter::ASimpleShooterCharacter()
 	GunShootDistance = FVector(10000.0f, 0.0f, 0.0f);
 
 	SetReplicates(true);
-
-
 }
 
 
@@ -97,9 +95,11 @@ void ASimpleShooterCharacter::BeginPlay()
 	EndAim();
 
 	GetWorldTimerManager().SetTimer(RotationUpdateTimer, this, &ASimpleShooterCharacter::UpdateRotator, 0.022f, true);
+	SimpleShooterGameModeRef = (ASimpleShooterGameMode*)GetWorld()->GetAuthGameMode();
 
 	SimpleShooterPlayerControllerRef = Cast<ASimpleShooterPlayerController>(GetController());
-	SimpleShooterGameModeRef = (ASimpleShooterGameMode*)GetWorld()->GetAuthGameMode();
+	//if (SimpleShooterPlayerControllerRef)
+	//	SimpleShooterPlayerControllerRef->AddState();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -123,6 +123,10 @@ void ASimpleShooterCharacter::SetupPlayerInputComponent(class UInputComponent* P
 	// Bind Aim event
 	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &ASimpleShooterCharacter::StartAim);
 	PlayerInputComponent->BindAction("Aim", IE_Released, this, &ASimpleShooterCharacter::EndAim);
+
+	// Bind ShowScore event
+	PlayerInputComponent->BindAction("ShowScore", IE_Pressed, this, &ASimpleShooterCharacter::ShowScore);
+	PlayerInputComponent->BindAction("ShowScore", IE_Released, this, &ASimpleShooterCharacter::HideScore);
 
 	// Enable touchscreen input
 	EnableTouchscreenMovement(PlayerInputComponent);
@@ -244,13 +248,17 @@ void ASimpleShooterCharacter::TakeAnyDamage(AActor * DamagedActor, float Damage,
 						if(bTakeHeadShot)
 							ShooterPlayerState->PlayerHeadShots += 1; //Add HeadShot point
 						ShooterPlayerState->PlayerScore += 1; //Add Kills
+						//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Add kill score to Killer!"));
 					}
 				}
 			}
 
 			ASimpleShooterPS* SelfPlayerState = Cast<ASimpleShooterPS>(GetPlayerState());
 			if (SelfPlayerState)
+			{
 				SelfPlayerState->PlayerDeaths += 1;
+				//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Add death to self!"));
+			}
 		}
 	}
 	bTakeHeadShot = false;
@@ -267,7 +275,7 @@ void ASimpleShooterCharacter::UpdateHPWidget_Implementation()
 	if (SimpleShooterPlayerControllerRef)
 	{
 		SimpleShooterPlayerControllerRef->SetHidenHPWidget(!bIsDead);
-		SimpleShooterPlayerControllerRef->SetGPWidget(Health);
+		SimpleShooterPlayerControllerRef->SetHPWidget(Health);
 	}
 }
 
@@ -385,6 +393,18 @@ void ASimpleShooterCharacter::EndAim()
 	GetCharacterMovement()->MaxWalkSpeed = MaxWalkSpeed;
 }
 
+void ASimpleShooterCharacter::ShowScore()
+{
+	if (SimpleShooterPlayerControllerRef)
+		SimpleShooterPlayerControllerRef->SetHidenScoreWidget(false);
+}
+
+void ASimpleShooterCharacter::HideScore()
+{
+	if (SimpleShooterPlayerControllerRef)
+		SimpleShooterPlayerControllerRef->SetHidenScoreWidget(true);
+}
+
 /*void ASimpleShooterCharacter::SetMaxWalkSpeed(float NewSpeed)
 {
 	GetCharacterMovement()->MaxWalkSpeed = NewSpeed;
@@ -418,7 +438,7 @@ void ASimpleShooterCharacter::ShootLineTrace_Implementation()
 {
 	const FRotator LineTraceRotation = GetControlRotation();
 	// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
-	const FVector LineTraceSpawnLocation = ((FirstPersonCameraComponent) ? FirstPersonCameraComponent->GetComponentLocation() : GetActorLocation()) + LineTraceRotation.RotateVector(FVector(75.f, 0.f,0.f));
+	const FVector LineTraceSpawnLocation = ((FirstPersonCameraComponent) ? FirstPersonCameraComponent->GetComponentLocation() : GetActorLocation()) + LineTraceRotation.RotateVector(FVector(5.f, 0.f,0.f));
 	const FVector EndTraceSpawnLocation = ((FirstPersonCameraComponent) ? FirstPersonCameraComponent->GetComponentLocation() : GetActorLocation()) + LineTraceRotation.RotateVector(FVector(100000.f, 0.f, 0.f));
 	FHitResult OutHit; 
 	FCollisionQueryParams Params = FCollisionQueryParams::DefaultQueryParam;
