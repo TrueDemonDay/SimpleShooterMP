@@ -12,8 +12,11 @@
 void ASimpleShooterPlayerController::BeginPlayingState()
 {
 	Super::BeginPlayingState();
-	AddState();
-	//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Try AddState!"));
+	if (IsLocalController())
+	{
+		AddState();
+		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("Try AddState!"));
+	}
 }
 
 
@@ -65,9 +68,9 @@ void ASimpleShooterPlayerController::AddState()
 			return;
 		}
 		bStateIsAdd = true;
-		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("AddState!"));
+		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("AddState Sucsess!"));
 
-		GetWorldTimerManager().SetTimer(ScoreUpdateTimer, this, &ASimpleShooterPlayerController::UpdateScore, 0.5f, true);
+		GetWorldTimerManager().SetTimer(ScoreUpdateTimer, this, &ASimpleShooterPlayerController::UpdateScore, 0.5f, true); //Start update Statistic fo only owner, bad solutiod
 	}
 }
 

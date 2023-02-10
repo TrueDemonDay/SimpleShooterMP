@@ -116,6 +116,10 @@ protected:
 	void StartAim();
 	void EndAim();
 
+	//CrouchFunction
+	void StartCrouch();
+	void EndCrouch();
+
 	//Show and hide functions
 	void ShowScore();
 	void HideScore();
@@ -205,7 +209,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = Movement)
 	float MaxSprintSpeed = 700.f;
 	UPROPERTY(EditDefaultsOnly, Category = Movement)
-	float MaxAimSpeed = 200.f;
+	float MaxAimSpeed = 250.f;
+
 
 	//DamageVar (set default)
 	UPROPERTY(EditDefaultsOnly, Category = Shooting)

@@ -32,7 +32,7 @@ ASimpleShooterCharacter::ASimpleShooterCharacter()
 	OnTakeAnyDamage.AddDynamic(this, &ASimpleShooterCharacter::TakeAnyDamage);
 
 	// Set size for collision capsule
-	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
+	GetCapsuleComponent()->InitCapsuleSize(35.f, 88.0f);
 
 	// set our turn rates for input
 	BaseTurnRate = 45.f;
@@ -100,6 +100,8 @@ void ASimpleShooterCharacter::BeginPlay()
 	SimpleShooterPlayerControllerRef = Cast<ASimpleShooterPlayerController>(GetController());
 	//if (SimpleShooterPlayerControllerRef)
 	//	SimpleShooterPlayerControllerRef->AddState();
+
+	GetCharacterMovement()->MaxWalkSpeedCrouched = MaxAimSpeed;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -114,6 +116,11 @@ void ASimpleShooterCharacter::SetupPlayerInputComponent(class UInputComponent* P
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 
+	// Bind jump events
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ASimpleShooterCharacter::StartCrouch);
+	PlayerInputComponent->BindAction("Crouch", IE_Released, this, &ASimpleShooterCharacter::EndCrouch);
+
+	//Bind sprint event
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &ASimpleShooterCharacter::StartSprint);
 	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &ASimpleShooterCharacter::EndSprint);
 
@@ -364,6 +371,8 @@ void ASimpleShooterCharacter::StartSprint()
 {
 	if (Aiming)
 		EndAim();
+	if (GetCharacterMovement()->IsCrouching())
+		EndCrouch();
 	SetMaxWalkSpeed(MaxSprintSpeed);
 	GetCharacterMovement()->MaxWalkSpeed = MaxSprintSpeed;
 }
@@ -391,6 +400,18 @@ void ASimpleShooterCharacter::EndAim()
 	FirstPersonCameraComponent->FieldOfView = 90;
 	SetMaxWalkSpeed(MaxWalkSpeed);
 	GetCharacterMovement()->MaxWalkSpeed = MaxWalkSpeed;
+}
+
+void ASimpleShooterCharacter::StartCrouch()
+{
+	Crouch(true);
+	//GetCharacterMovement()->Crouch();
+}
+
+void ASimpleShooterCharacter::EndCrouch()
+{
+	UnCrouch(true);
+	//GetCharacterMovement()->UnCrouch();
 }
 
 void ASimpleShooterCharacter::ShowScore()
@@ -463,13 +484,13 @@ void ASimpleShooterCharacter::ShootLineTrace_Implementation()
 
 void ASimpleShooterCharacter::PlayerDead_Implementation()
 {
+	//Off collision for pawns
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 	//On ragdoll and show for player
 	GetMesh()->SetSimulatePhysics(true);
 	GetMesh()->SetOwnerNoSee(false);
 	//Hide hands and weapon for player
 	Mesh1P->SetHiddenInGame(true, true);
-	//Off collision for pawns
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 	bIsDead = true;
 
 	//StartTimer for respawn
